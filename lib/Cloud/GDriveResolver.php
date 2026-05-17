@@ -2,31 +2,31 @@
 
 namespace OCA\NCDownloader\Cloud;
 
-use OCA\NCDownloader\Http\Client;
 use Symfony\Component\DomCrawler\Crawler;
 
 class GDriveResolver
 {
-    private $client;
     private $crawler;
+    private $cookieDir;
 
-    public function __construct(Client $client, Crawler $crawler)
+    public function __construct(Crawler $crawler)
     {
-        $this->client = $client;
         $this->crawler = $crawler;
+        $this->cookieDir = sys_get_temp_dir();
     }
 
     /**
-     * Resolve a Google Drive URL. Returns the direct download URL and the
-     * original filename so aria2c can use proper --out filename.
+     * Resolve a Google Drive URL. Returns the direct download URL, the
+     * original filename, and the session cookie so aria2c can pass
+     * the virus scan confirmation.
      *
-     * @return array{url: string, filename: string|null}
+     * @return array{url: string, filename: string|null, cookie: string|null}
      */
     public function resolve(string $url): array
     {
         $fileId = $this->extractFileId($url);
         if (!$fileId) {
-            return ['url' => $url, 'filename' => null];
+            return ['url' => $url, 'filename' => null, 'cookie' => null];
         }
 
         $directUrl = sprintf(
@@ -39,23 +39,32 @@ class GDriveResolver
         }
 
         $filename = null;
+        $cookie = null;
 
         try {
-            $response = $this->client->request('GET', $directUrl, [
-                'headers' => [
-                    'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                ],
-                'max_redirects' => 5,
+            $cookieJar = $this->cookieDir . '/gdrive-cookies-' . $fileId . '.txt';
+
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $directUrl,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_MAXREDIRS => 5,
+                CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                CURLOPT_COOKIEJAR => $cookieJar,
+                CURLOPT_COOKIEFILE => $cookieJar,
             ]);
 
-            $body = $response->getContent();
+            $body = curl_exec($ch);
+            curl_close($ch);
 
-            // Check if this is a confirmation page (large files)
-            if (strpos($body, 'uc-download-link') !== false || strpos($body, 'confirm') !== false) {
+            // Extract cookie as a header string for aria2c
+            $cookie = $this->extractCookie($cookieJar);
+
+            if ($body && (strpos($body, 'uc-download-link') !== false || strpos($body, 'confirm') !== false)) {
                 $this->crawler->clear();
                 $this->crawler->addHtmlContent($body);
 
-                // Extract hidden form fields for the confirmation bypass
                 $confirm = $this->crawler->filter('input[name="confirm"]')->count()
                     ? $this->crawler->filter('input[name="confirm"]')->attr('value') : null;
                 $uuid = $this->crawler->filter('input[name="uuid"]')->count()
@@ -68,8 +77,7 @@ class GDriveResolver
                     $directUrl .= '&uuid=' . urlencode($uuid);
                 }
 
-                // Extract the real filename from the confirmation page:
-                // <span class="uc-name-size"><a href="...">filename.rar</a> (1.1G)</span>
+                // Extract the real filename from the confirmation page
                 $nameNode = $this->crawler->filter('.uc-name-size a');
                 if ($nameNode->count()) {
                     $filename = trim($nameNode->first()->text());
@@ -79,7 +87,33 @@ class GDriveResolver
             \OCA\NCDownloader\Tools\Helper::debug('GDriveResolver: ' . $e->getMessage());
         }
 
-        return ['url' => $directUrl, 'filename' => $filename];
+        return ['url' => $directUrl, 'filename' => $filename, 'cookie' => $cookie];
+    }
+
+    private function extractCookie(string $cookieJar): ?string
+    {
+        if (!file_exists($cookieJar)) {
+            return null;
+        }
+
+        $cookies = [];
+        $lines = file($cookieJar, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($lines as $line) {
+            // Skip real comments (lines starting with '# ' or '# Netscape')
+            if (strpos($line, '# ') === 0 || strpos($line, '#Netscape') === 0) {
+                continue;
+            }
+            // Netscape cookie format:
+            // domain  flag  path  secure  expiry  name  value
+            // flag may start with #HttpOnly_
+            $line = ltrim($line, '#');
+            $parts = preg_split('/\s+/', $line);
+            if (count($parts) >= 7) {
+                $cookies[] = $parts[5] . '=' . $parts[6];
+            }
+        }
+
+        return !empty($cookies) ? implode('; ', $cookies) : null;
     }
 
     private function extractFileId(string $url): ?string
