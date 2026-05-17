@@ -17,60 +17,28 @@
 export default {
   name: "toggleButton",
   props: {
-    disabled: {
-      type: Boolean,
-      default: false,
-    },
-    enabledText: {
-      type: String,
-      default: "On",
-    },
-
-    disabledText: {
-      type: String,
-      default: "Off",
-    },
-
-    name: {
-      type: String,
-      default: "check-button",
-    },
-
-    defaultStatus: {
-      type: Boolean,
-      default: false,
-    },
+    disabled: { type: Boolean, default: false },
+    enabledText: { type: String, default: "On" },
+    disabledText: { type: String, default: "Off" },
+    name: { type: String, default: "check-button" },
+    defaultStatus: { type: Boolean, default: false },
   },
-  methods: {},
-
   data() {
-    return {
-      status: this.defaultStatus,
-    };
+    return { status: this.defaultStatus };
   },
-
   watch: {
     defaultStatus() {
       this.status = Boolean(this.defaultStatus);
     },
   },
-
   computed: {
-    isActive() {
-      return this.status;
-    },
-
-    text() {
-      return this.status ? this.disabledText : this.enabledText;
-    },
+    isActive() { return this.status; },
+    text() { return this.status ? this.disabledText : this.enabledText; },
     inputValue: {
-      get() {
-        return this.status;
-      },
-
+      get() { return this.status; },
       set(value) {
         this.status = value;
-        this.$emit("changed", this.name,value);
+        this.$emit("changed", this.name, value);
       },
     },
   },
@@ -78,20 +46,20 @@ export default {
 </script>
 
 <style scoped lang="scss">
-$toggle-height: 25px;
-$toggle-width: 45px;
-$bg-color: #e5e5ee;
+$toggle-height: 24px;
+$toggle-width: 44px;
 
-.toggle-button,
-.toggle-label {
+.toggle-button {
   user-select: none;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.toggle-button,
-.toggle-label,
-.toggle-switch {
-  vertical-align: middle;
+.toggle-label {
+  font-size: 14px;
+  color: var(--color-main-text);
 }
 
 .toggle-button input[type="checkbox"] {
@@ -104,40 +72,32 @@ $bg-color: #e5e5ee;
 .toggle-button .toggle-switch {
   display: inline-block;
   height: $toggle-height;
-  border-radius: $toggle-height / 3;
+  border-radius: $toggle-height;
   width: $toggle-width;
-  background: $bg-color;
-  box-shadow: inset 0 0 1px #b1bbc7;
+  background: var(--color-background-dark);
+  box-shadow: inset 0 0 2px rgba(0,0,0,0.15);
   position: relative;
-  margin-left: 6px;
-  transition: all 0.25s;
-}
+  transition: background 0.2s;
 
-.toggle-button .toggle-switch::after {
-  content: "";
-  position: absolute;
-  display: block;
-  height: $toggle-height;
-  width: $toggle-width / 2;
-  border-radius: 50%;
-  left: 0;
-  transform: translateX(0);
-  transition: all 0.25s cubic-bezier(0.5, -0.6, 0.5, 1.6);
-}
-
-.toggle-button .toggle-switch::after {
-  background: #ffffff;
-  box-shadow: 0 0 1px #666;
+  &::after {
+    content: "";
+    position: absolute;
+    display: block;
+    height: $toggle-height - 4px;
+    width: $toggle-height - 4px;
+    border-radius: 50%;
+    left: 2px;
+    top: 2px;
+    background: var(--color-main-background);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    transition: transform 0.2s ease;
+  }
 }
 
 .active .toggle-switch {
-  background: #adedcb;
-  box-shadow: inset 0 0 1px #adedcb;
-}
-
-.active .toggle-switch::after {
-  transform: translateX($toggle-width / 2);
-  background: #488c68;
-  box-shadow: 0 0 1px #53b883;
+  background: var(--color-primary);
+  &::after {
+    transform: translateX($toggle-width - $toggle-height);
+  }
 }
 </style>

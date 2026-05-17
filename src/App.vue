@@ -47,6 +47,7 @@ export default {
         aria2_url: helper.generateUrl("/apps/ncdownloader/new"),
         search_url: helper.generateUrl("/apps/ncdownloader/search"),
         upload_url: helper.generateUrl("/apps/ncdownloader/upload"),
+        cloud_url: helper.generateUrl("/apps/ncdownloader/cloud/new"),
       },
     };
   },
@@ -71,6 +72,11 @@ export default {
         message = helper.t("Download task started!");
         helper.pollingYtdl();
         helper.setContentTableType("ytdl-downloads");
+      } else if (formData.type === "cloud") {
+        // Cloud downloads use aria2c — appear in Active Downloads with full progress
+        message = helper.t("Download task started!");
+        helper.setContentTableType("active-downloads");
+        helper.polling();
       } else {
         helper.polling();
         helper.setContentTableType("active-downloads");
@@ -148,34 +154,24 @@ export default {
 </script>
 
 <style lang="scss">
-@import "css/variables.scss";
-
 #app-content-wrapper {
   .ncdownloader-form-wrapper {
     position: relative;
     width: 100%;
-    top: 0;
-    left: 0;
-  }
-  .ncdownloader-form-wrapper.top-left {
-    width: 100%;
-    top: 0;
-    left: 0;
   }
 
   .form-section {
     width: 100%;
     display: flex;
     flex-flow: column;
-    gap: 1.2em;
+    gap: 16px;
   }
 }
 
 @media only screen and (max-width: 1024px) {
   #app-content-wrapper {
     #ncdownloader-form-wrapper {
-      position: relative;
-      margin: 2px;
+      margin: 4px;
     }
   }
 }

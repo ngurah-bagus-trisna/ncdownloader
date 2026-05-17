@@ -1,8 +1,8 @@
 <template>
-  <form class="upload-file-form" id="nc-vue-upload-file-form" :action="path">
-    <div class="icon-upload fileinput">
-      <input type="file" name="torrentfile" id="torrentfile" accept=".torrent" @change="handler" />
-    </div>
+  <form class="upload-file-form" :action="path">
+    <label class="icon-upload fileinput">
+      <input type="file" name="torrentfile" accept=".torrent" @change="handler" />
+    </label>
   </form>
 </template>
 <script>
@@ -17,21 +17,31 @@ export default {
 };
 </script>
 <style scoped lang="scss">
-@import "../css/variables.scss";
-#nc-vue-upload-file-form {
+.upload-file-form {
+  height: 100%;
   .icon-upload {
     background-image: url("../../img/upload.svg");
   }
-  .icon-upload.fileinput {
-    background-color: #9f9fad;
+  .fileinput {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     height: 100%;
-    & input[type="file"] {
+    width: 44px;
+    background-color: var(--color-main-background);
+    background-position: center;
+    background-repeat: no-repeat;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    &:hover {
+      background-color: var(--color-background-hover);
+    }
+    input[type="file"] {
       cursor: pointer;
-      font-size: 16px;
       opacity: 0;
-      position: relative;
-      width: $upload-width;
-      z-index: 20;
+      width: 100%;
+      height: 100%;
     }
   }
 }

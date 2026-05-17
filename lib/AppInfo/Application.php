@@ -3,6 +3,7 @@
 namespace OCA\NCDownloader\AppInfo;
 
 use OCA\NCDownloader\Aria2\Aria2;
+use OCA\NCDownloader\Cloud\GDriveResolver;
 use OCA\NCDownloader\Http\Client;
 use OCA\NCDownloader\Tools\Helper;
 use OCA\NCDownloader\Db\Settings;
@@ -47,9 +48,10 @@ class Application extends App implements IBootstrap
     {
         $user = Helper::getUser();
         $uid = ($user) ? $user->getUID() : '';
-        //$settings = new Settings($uid);
-        //$userFolder = Helper::getUserFolder($uid);
         $context = $c->getAppContainer();
+
+        // Auto-setup: download bundled binaries on first boot if missing
+        $this->autoSetupBinaries();
 
         $context->registerService(Aria2::class, function (ContainerInterface $c) use ($uid) {
             $config = Helper::getAria2Config($uid);
@@ -59,6 +61,12 @@ class Application extends App implements IBootstrap
             $config = Helper::getYtdlConfig($uid);
             return new Ytdl($config);
         });
+        $context->registerService(GDriveResolver::class, function (ContainerInterface $c) {
+            return new GDriveResolver(
+                $c->get(Client::class),
+                $c->get(Crawler::class)
+            );
+        });
 
         $context->registerService(Settings::class, function (ContainerInterface $c) use ($uid) {
             return new Settings($uid);
@@ -67,5 +75,39 @@ class Application extends App implements IBootstrap
             return $uid;
         });
         //$context->injectFn([$this, 'registerSearchProviders']);
+    }
+
+    private function autoSetupBinaries(): void
+    {
+        $binDir = __DIR__ . '/../../bin';
+        if (!is_dir($binDir)) {
+            @mkdir($binDir, 0755, true);
+        }
+        if (!is_dir($binDir) || !is_writable($binDir)) {
+            return; // Can't write — skip auto-setup (binaries may already be in system PATH)
+        }
+
+        // Download aria2c bundled binary if not present
+        $aria2Bin = $binDir . '/aria2c';
+        $ytdlBin = $binDir . '/yt-dlp';
+
+        if (!@is_file($aria2Bin) && !Helper::findBinaryPath('aria2c')) {
+            try {
+                Helper::Download('https://github.com/shiningw/ncdownloader-bin/raw/master/aria2c', $aria2Bin);
+                chmod($aria2Bin, 0744);
+            } catch (\Exception $e) {
+                // Silent fail — user will see "not installed" in UI
+            }
+        }
+
+        // Download yt-dlp bundled binary if not present
+        if (!@is_file($ytdlBin) && !Helper::findBinaryPath('yt-dlp')) {
+            try {
+                Helper::Download('https://github.com/shiningw/ncdownloader-bin/raw/master/yt-dlp', $ytdlBin);
+                chmod($ytdlBin, 0744);
+            } catch (\Exception $e) {
+                // Silent fail
+            }
+        }
     }
 }

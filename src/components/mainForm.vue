@@ -1,44 +1,53 @@
 <template>
-  <form class="main-form" id="nc-vue-unified-form" :action="path">
-    <div class="options-group">
-      <div
-        class="magnet-link http-link option-buttons active-button"
-        @click.prevent="whichType('aria2', $event)"
+  <form class="main-form" :action="path">
+    <div class="type-selector">
+      <button
+        type="button"
+        :class="['type-btn', { active: downloadType === 'aria2' }]"
+        @click="whichType('aria2', $event)"
       >
         HTTP/MAGNET
-      </div>
-      <div
-        class="ytdl-link option-buttons"
-        @click.prevent="whichType('ytdl', $event)"
+      </button>
+      <button
+        type="button"
+        :class="['type-btn', { active: downloadType === 'ytdl' }]"
+        @click="whichType('ytdl', $event)"
       >
         Youtube-dl
-      </div>
-      <div
-        class="search-torrents option-buttons"
-        @click.prevent="whichType('search', $event)"
+      </button>
+      <button
+        type="button"
+        :class="['type-btn', { active: downloadType === 'search' }]"
+        @click="whichType('search', $event)"
       >
         {{ searchLabel }}
-      </div>
+      </button>
+      <button
+        type="button"
+        :class="['type-btn', { active: downloadType === 'cloud' }]"
+        @click="whichType('cloud', $event)"
+      >
+        Cloud
+      </button>
     </div>
+
     <div class="action-group">
       <div class="download-input-container" v-if="inputType === 'download'">
         <textInput :placeholder="placeholder" :dataType="downloadType"></textInput>
-        <div class="download-controls-container">
-          <div v-if="checkboxes" id="select-value-extension-container">
-            <select :value="selectedExt" id="select-value-extension">
-              <option id="defaultext" value="defaultext">Default</option>
-              <optgroup label="Video">
-                <option id="mp4" value="mp4">mp4</option>
-                <option id="webm" value="webm">webm</option>
-              </optgroup>
-              <optgroup label="Audio">
-                <option id="m4a" value="m4a">m4a</option>
-                <option id="mp3" value="mp3">mp3</option>
-                <option id="vorbis" value="vorbis">vorbis</option>
-              </optgroup>
-            </select>
-          </div>
-          <actionButton className="download-button" @clicked="download"></actionButton>
+        <div class="download-controls">
+          <select v-if="checkboxes" v-model="selectedExt" id="select-value-extension">
+            <option value="defaultext">Default</option>
+            <optgroup label="Video">
+              <option value="mp4">mp4</option>
+              <option value="webm">webm</option>
+            </optgroup>
+            <optgroup label="Audio">
+              <option value="m4a">m4a</option>
+              <option value="mp3">mp3</option>
+              <option value="vorbis">vorbis</option>
+            </optgroup>
+          </select>
+          <button type="button" class="primary" @click="download">Download</button>
           <uploadFile
             v-if="downloadType === 'aria2'"
             @uploadfile="uploadFile"
@@ -47,6 +56,7 @@
           <folderSettings :path="dlPath"></folderSettings>
         </div>
       </div>
+
       <searchInput
         v-else
         @search="search"
@@ -56,6 +66,7 @@
     </div>
   </form>
 </template>
+
 <script>
 import textInput from "./textInput";
 import searchInput from "./searchInput.vue";
@@ -68,7 +79,6 @@ export default {
   inject: ["settings", "search_sites"],
   data() {
     return {
-      checkedValue: false,
       path: this.uris.aria2_url,
       dlPath: this.settings.settings.ncd_downloader_dir,
       inputType: "download",
@@ -76,37 +86,27 @@ export default {
       downloadType: "aria2",
       placeholder: t("ncdownloader", "Paste your http/magnet link here"),
       searchLabel: t("ncdownloader", "Search Torrents"),
-      searchOptions: this.search_sites ? this.search_sites : this.noOptions(),
+      searchOptions: this.search_sites || [{ name: "nooptions", label: "No Options" }],
       selectedExt: "defaultext",
     };
   },
-  components: {
-    textInput,
-    actionButton,
-    searchInput,
-    uploadFile,
-    folderSettings,
-  },
+  components: { textInput, actionButton, searchInput, uploadFile, folderSettings },
   created() {},
-  computed: {},
   methods: {
     whichType(type, event) {
-      let element = event.target;
-      let nodeList = document.querySelectorAll(".option-buttons");
-      nodeList.forEach((node) => {
-        node.classList.remove("active-button");
-      });
-      element.classList.toggle("active-button");
       this.downloadType = type;
       if (type === "aria2") {
         this.path = this.uris.aria2_url;
       } else if (type === "ytdl") {
         this.placeholder = t("ncdownloader", "Paste your video link here");
         this.path = this.uris.ytd_url;
+      } else if (type === "cloud") {
+        this.placeholder = t("ncdownloader", "Paste cloud drive share link (GDrive, OneDrive, etc.)");
+        this.path = this.uris.cloud_url;
       } else {
         this.path = this.uris.search_url;
       }
-      this.checkboxes = type === "ytdl" ? true : false;
+      this.checkboxes = type === "ytdl";
       this.inputType = type === "search" ? "search" : "download";
     },
     download(event) {
@@ -119,161 +119,179 @@ export default {
       this.$emit("uploadfile", event, vm);
     },
     optionCallback(option) {
-      if (option.label.toLowerCase() == "music") {
-        this.searchLabel = t("ncdownloader", "Search Music");
-      } else {
-        this.searchLabel = t("ncdownloader", "Search Torrents");
-      }
-    },
-    noOptions() {
-      return [{ name: "nooptions", label: "No Options" }];
+      this.searchLabel = option.label.toLowerCase() === "music"
+        ? t("ncdownloader", "Search Music")
+        : t("ncdownloader", "Search Torrents");
     },
   },
-  mounted() {},
   name: "mainForm",
-  props: {
-    uris: Object,
-    uri: String,
-  },
+  props: { uris: Object, uri: String },
 };
 </script>
+
 <style lang="scss">
 @import "../css/variables.scss";
 
-#nc-vue-unified-form {
+.main-form {
   display: flex;
+  flex-wrap: wrap;
   width: 100%;
-  height: $column-height;
-  font-size: medium;
-  .action-group {
-    width: 100%;
-  }
-  .options-group,
-  .action-group > div {
-    display: flex;
-    width: auto;
-    height: 100%;
-    position: relative;
-  }
-  .options-group > .option-buttons {
-    margin: 0;
-    padding: 10px;
-    outline: 0;
-    font-weight: bold;
-    font-size: 13px;
-    font-family: inherit;
-    vertical-align: baseline;
-    cursor: pointer;
-    white-space: nowrap;
-    min-height: 34px;
-    width: auto;
-  }
-  .active-button {
-    border: 2px #9a5c8b solid;
-  }
+  gap: 12px;
 
-  .action-group {
-    flex: 2;
-    & > div {
-      border: 1px solid #565687;
-      & > div,
-      & > select {
-        height: 100%;
-        display: flex;
-        padding: 0px;
-        margin: 0px;
+  .type-selector {
+    display: flex;
+    gap: 0;
+    border-radius: var(--border-radius-pill, 22px);
+    overflow: hidden;
+    background-color: var(--color-background-dark, var(--color-background-hover));
+    padding: 2px;
+
+    .type-btn {
+      padding: 6px 16px;
+      border: none;
+      background: transparent;
+      color: var(--color-text-maxcontrast);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: var(--border-radius-pill, 22px);
+      transition: all 0.15s ease-in-out;
+      white-space: nowrap;
+
+      &.active {
+        background-color: var(--color-primary);
+        color: var(--color-primary-text);
       }
-      & > div[class$="-controls-container"] {
-        display: flex;
-        & div,
-        & select {
-          height: 100%;
-          color: #181616;
-          font-size: medium;
-          background-color: #bdbdcf;
-        }
+
+      &:not(.active):hover {
+        color: var(--color-main-text);
+        background-color: var(--color-background-hover);
       }
     }
   }
 
-  .checkboxes {
-    border-radius: 0%;
-  }
-  .download-button.btn-primary,
-  .search-button.btn-primary {
-      color: #fff;
-      background-color: #2d3f59;
-      border-color: #1e324f;
-      border-radius: 0%;
-  }
-  .download-button.btn-primary:hover,
-  .search-button.btn-primary:hover {
-      background-color: #191a16;
+  .action-group {
+    flex: 1;
+    min-width: 280px;
   }
 
-  .magnet-link,
-  .choose-file {
-    background-color: #a0a0ae;
-    border-radius: 15px 0px 0px 15px;
+  .download-input-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+
+    // Text input styling
+    :deep(input[type="text"]) {
+      flex: 1;
+      min-width: 200px;
+      padding: 8px 12px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--border-radius);
+      background-color: var(--color-main-background);
+      color: var(--color-main-text);
+      font-size: 14px;
+      height: $column-height;
+
+      &:focus {
+        border-color: var(--color-primary);
+        outline: none;
+        box-shadow: 0 0 0 2px var(--color-primary-light);
+      }
+
+      &::placeholder {
+        color: var(--color-text-maxcontrast);
+      }
+    }
   }
 
-  .ytdl-link {
-    background-color: #b8b8ca;
-  }
-  .search-torrents {
-    background-color: #d0d0e0;
+  .download-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: $column-height;
+
+    select {
+      height: 100%;
+      padding: 0 10px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--border-radius);
+      background-color: var(--color-main-background);
+      color: var(--color-main-text);
+      font-size: 14px;
+
+      &:focus {
+        border-color: var(--color-primary);
+        outline: none;
+      }
+    }
+
+    button.primary {
+      height: 100%;
+      white-space: nowrap;
+      padding: 0 20px;
+    }
   }
 
-  .search-torrents,
-  .ytdl-link,
-  .magnet-link,
-  .choose-file {
-    color: #181616;
-  }
-  .checkboxes {
-    background-color: #c4c4d9;
-    padding: 5px 1px;
-  }
-  input,
-  select,
-  button {
-    margin: 0px;
-    border: 0px;
-    padding: 10px;
-    height: 100%;
-  }
-  button {
-    white-space: nowrap;
+  // Search input container
+  :deep(.search-input-container) {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+
+    input[type="text"] {
+      flex: 1;
+      min-width: 150px;
+      padding: 8px 12px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--border-radius);
+      background-color: var(--color-main-background);
+      color: var(--color-main-text);
+      height: $column-height;
+
+      &:focus {
+        border-color: var(--color-primary);
+        outline: none;
+        box-shadow: 0 0 0 2px var(--color-primary-light);
+      }
+    }
+
+    select {
+      height: $column-height;
+      padding: 0 10px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--border-radius);
+      background-color: var(--color-main-background);
+      color: var(--color-main-text);
+    }
   }
 }
+
 @media only screen and (max-width: 1024px) {
-  #nc-vue-unified-form {
-    display: flex;
+  .main-form {
     flex-flow: column;
-    row-gap: 10px;
-    height: $column-height * 3 + 10;
+    gap: 8px;
 
-    .options-group,
-    .action-group > div {
-      display: flex;
+    .type-selector {
       width: 100%;
-      height: $column-height;
+      justify-content: center;
+      .type-btn {
+        flex: 1;
+        text-align: center;
+      }
     }
 
-    .action-group > div {
-      border: 0px;
-      flex-flow: column nowrap;
-      & > div {
-        margin: 5px 1px;
+    .download-input-container {
+      flex-flow: column;
+
+      :deep(input[type="text"]) {
+        width: 100%;
       }
-      & > div[class$="-controls-container"] {
-        display: flex;
+
+      .download-controls {
+        width: 100%;
         justify-content: center;
-      }
-    }
-    .options-group {
-      & > button {
-        width: calc(100% / 3);
       }
     }
   }

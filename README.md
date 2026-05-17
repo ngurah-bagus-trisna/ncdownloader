@@ -1,39 +1,117 @@
-- [English](README.md)
-- [简体中文](README.zh-CN.md)
+# NCDownloader
 
-An easy-to-use web interface for Aria2 and youtube-dl
+A unified download manager for Nextcloud — Aria2, yt-dlp, and cloud storage downloads all in one place.
 
-- Search for torrents within the app from mutiple BT sites
-- Control Aria2 and manage download tasks from the web;
-- Harnessing the power of youtube-dl to download videos from 700+ video sites(youtube,youku,dailymotion,twitter,facebook and the likes;
-<img width="800" alt="nc2" src="https://user-images.githubusercontent.com/3911975/132008308-dec2a7ba-4387-441e-9ded-538d61fbccf0.png">
-<img width="800" alt="nc4" src="https://user-images.githubusercontent.com/3911975/142444998-54dd54a6-0c8e-4d49-8188-270964a99c50.png">
-<img width="800" alt="nc5" src="https://user-images.githubusercontent.com/3911975/142445020-27ec389a-5437-4d28-acc0-5e757fd6897d.png">
+## Features
 
-### How to use
+- **Aria2 Web GUI** — HTTP, BitTorrent, Magnet links with full progress tracking (speed, ETA, percentage)
+- **yt-dlp Integration** — Download videos from 700+ sites (YouTube, Twitter, Dailymotion, etc.)
+- **Cloud Downloader** — Google Drive, OneDrive, SharePoint, Terabox and more
+- **Torrent Search** — Built-in search across multiple torrent sites
+- **Auto-Setup** — Bundled binaries auto-downloaded on first run, one-command setup script
+- **Nextcloud-Native UI** — Dark mode support, follows Nextcloud design system
 
-NCDownloader has included both yt-dlp(faster version of youtube-dl) and aria2c and there is no need for manual installation under normal circumstances (*tested it successfully with snap version of nextcloud both in centos7 and ubuntu 20.04*)   
-But if for some reason,the builtin binaries don't work for you, then you will need to install them yourself
+## Screenshots
 
-#### installing aria2 and yt-dlp in ubuntu
+<img width="800" alt="NCDownloader main UI" src="https://user-images.githubusercontent.com/3911975/142444998-54dd54a6-0c8e-4d49-8188-270964a99c50.png">
+<img width="800" alt="NCDownloader settings" src="https://user-images.githubusercontent.com/3911975/142445020-27ec389a-5437-4d28-acc0-5e757fd6897d.png">
+
+## Quick Start
+
+### One-command setup
+
 ```bash
-sudo apt install aria2
-sudo curl -L https://github.com/yt-dlp/yt-dlp/releases/download/2022.05.18/yt-dlp 4 -o /usr/local/bin/youtube-dl
-sudo chmod a+rx /usr/local/bin/youtube-dl
+cd /var/www/nextcloud/apps/ncdownloader
+./setup.sh
 ```
-Also, if you don't want to use the builtin versions, you can always force the app use a specific version by setting the binary path manually. In that case, the app will not try to find youtube-dl binary in your system, and the built-in ones will be ignored as well. 
 
-### How to build front-end code
+This installs all required tools (aria2, yt-dlp, ffmpeg, python3), PHP dependencies, and builds the frontend.
 
-NPM 7.0+ and node 14.0.0+ are required to build front-end scripts
+### Manual setup
 
 ```bash
-#start to build
+# Install system tools
+sudo apt install aria2 ffmpeg python3 python3-pip
+
+# Install PHP deps
+composer install
+
+# Build frontend
+npm install && npm run build
+
+# Enable in Nextcloud
+sudo -u www-data php occ app:enable ncdownloader
+```
+
+### Requirements
+
+- Nextcloud 25–33
+- PHP 8.0+
+- Node 14+ & npm 7+ (for building)
+- aria2c, yt-dlp (bundled binaries auto-downloaded if missing)
+
+## Usage
+
+### Aria2 Downloads
+Paste any HTTP, Magnet, or torrent link → file downloads with full progress tracking.
+
+### YouTube / Video Downloads
+Select "Youtube-dl" tab → paste video URL → choose format (mp4, webm, m4a, mp3) → download.
+
+### Cloud Downloads (Google Drive, OneDrive, etc.)
+Select "Cloud" tab → paste share link → NCDownloader resolves the URL and downloads via aria2c. The app automatically handles Google Drive's virus scan confirmation page and extracts the correct filename.
+
+Supported services:
+- **Google Drive** — share links, `drive.google.com/file/d/*`, `drive.usercontent.google.com/download?*`
+- **OneDrive / SharePoint** — share links and direct URLs
+- **Dropbox** — via yt-dlp extractor
+- **Terabox** and others via yt-dlp fallback
+
+### Torrent Search
+Select "Search Torrents" tab → enter keywords → pick a search site → browse and download results.
+
+## Settings
+
+### Admin Settings
+- Aria2 RPC host, port, token
+- Custom aria2c / yt-dlp binary paths
+- Global Aria2 options
+- Disable BT for non-admin users
+- System info (binary versions, update checks)
+
+### Personal Settings
+- Download folder (per-user)
+- Custom Aria2 options (per-user)
+- Custom yt-dlp options (per-user)
+- Hide error messages toggle
+
+## Development
+
+```bash
+# Install deps
+composer install
+npm install
+
+# Build frontend
 npm run build
 
-#installing php dependencies
-composer install
+# Watch mode (hot rebuild)
+npm run watch
+
+# Lint
+npm run lint
+npm run stylelint
+
+# Package for distribution
+make dist
 ```
 
-#### Nextcloud App homepage
-https://apps.nextcloud.com/apps/ncdownloader
+## License
+
+AGPL v3. See [COPYING](COPYING).
+
+## Links
+
+- [Nextcloud App Store](https://apps.nextcloud.com/apps/ncdownloader)
+- [GitHub Repository](https://github.com/shiningw/ncdownloader)
+- [Issue Tracker](https://github.com/shiningw/ncdownloader/issues)

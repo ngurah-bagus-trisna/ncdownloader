@@ -88,9 +88,28 @@ export default {
 </script>
 
 <style lang="scss">
-@import "css/variables.scss";
 #ncdownloader-settings-collapsible-container {
   display: flex;
   flex-flow: column wrap;
+  gap: 8px;
+  padding: 8px 0;
+
+  .ncdownloader-settings-item {
+    a button {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--border-radius);
+      background-color: var(--color-main-background);
+      color: var(--color-main-text);
+      cursor: pointer;
+      font-size: 14px;
+      text-align: left;
+
+      &:hover {
+        background-color: var(--color-background-hover);
+      }
+    }
+  }
 }
 </style>

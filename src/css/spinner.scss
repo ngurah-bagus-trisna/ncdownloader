@@ -1,2 +1,13 @@
-@import "../../node_modules/bootstrap/scss/spinners";
-
+// Minimal spinner — Nextcloud provides .icon-loading for most cases
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--color-border);
+    border-top: 2px solid var(--color-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: inline-block;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

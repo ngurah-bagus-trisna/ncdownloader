@@ -1,19 +1,17 @@
 <template>
-  <div class="search-input" id="nc-vue-search-input">
+  <div class="search-input">
     <textInput :placeholder="placeholder" dataType="search"></textInput>
-    <div class="search-controls-container">
-      <div id="select-value-search-container">
-        <select :value="selected" @change="selectHandler" id="select-value-search">
-          <option
-            v-for="(option, key) in selectOptions"
-            v-bind:key="key"
-            :value="option.name"
-          >
-            {{ option.label }}
-          </option>
-        </select>
-      </div>
-      <actionButton className="search-button" :enableLoading="true" @clicked="search"
+    <div class="search-controls">
+      <select :value="selected" @change="selectHandler" id="select-value-search">
+        <option
+          v-for="(option, key) in selectOptions"
+          :key="key"
+          :value="option.name"
+        >
+          {{ option.label }}
+        </option>
+      </select>
+      <actionButton className="primary search-btn" :enableLoading="true" @clicked="search"
         >Search</actionButton
       >
     </div>
@@ -31,28 +29,33 @@ export default {
       selected: "TPB",
     };
   },
-  components: {
-    textInput,
-    actionButton,
-  },
+  components: { textInput, actionButton },
   methods: {
     search(event, btnVm) {
       this.$emit("search", event, btnVm);
     },
     selectHandler(event) {
-      const data = {};
-      const element = event.target;
-      data.key = element.value;
-      data.label = element.options[element.selectedIndex].text;
-      this.$emit("optionSelected", data);
+      this.$emit("optionSelected", {
+        key: event.target.value,
+        label: event.target.options[event.target.selectedIndex].text,
+      });
     },
   },
   name: "searchInput",
-  props: {
-    selectOptions: Object,
-  },
+  props: { selectOptions: Object },
 };
 </script>
 <style scoped lang="scss">
-@import "../css/variables.scss";
+.search-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+
+    .search-controls {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+}
 </style>

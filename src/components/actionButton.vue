@@ -1,22 +1,22 @@
 <template>
-  <button ref="button" class="button-vue" :class="className" v-if="loading ^ 1" @click.prevent="handler">
+  <button ref="button" :class="className" v-if="!loading" @click.prevent="handler">
     <slot>Download</slot>
   </button>
-  <button class="bs-spinner" v-if="loading">
-    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" disabled></span><span
-      class="visually-hidden">Loading...</span>
+  <button class="loading-btn" v-if="loading" disabled>
+    <span class="spinner"></span>
+    Loading...
   </button>
 </template>
 <script>
 export default {
   data() {
     return {
-      loading: 0,
+      loading: false,
     };
   },
   methods: {
     handler(event) {
-      if (this.enableLoading) this.loading = 1;
+      if (this.enableLoading) this.loading = true;
       this.$emit("clicked", event, this);
     },
   },
@@ -27,24 +27,48 @@ export default {
       type: Boolean,
       default: false,
     },
-    btnType: {
-      type: String,
-      default: "",
-    },
-    action: {
-      type: String,
-      default: "",
-    },
   },
 };
 </script>
 <style lang="scss" scoped>
-@import "../css/bootstrap.scss";
-@import "../css/btn.scss";
+button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 16px;
+    border-radius: var(--border-radius);
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    font-size: 14px;
+    min-height: 34px;
+}
 
-.button-vue {
-  @extend .btn;
-  @include button-variant(#212529,#212529, #fff);
-  border-radius: 0em;
+button:not(.loading-btn) {
+    background-color: var(--color-primary);
+    color: var(--color-primary-text);
+
+    &:hover {
+        filter: brightness(1.1);
+    }
+}
+
+.loading-btn {
+    background-color: var(--color-background-dark);
+    color: var(--color-text-maxcontrast);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--color-border);
+    border-top: 2px solid var(--color-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
 </style>

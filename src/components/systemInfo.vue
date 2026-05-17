@@ -1,144 +1,115 @@
 <template>
-    <div class="system-info-wrapper section">
-        <h2 class="section-title">System Info</h2>
-        <div class="system-info">
-            <div class="system-info-item">
-                <div class="system-info-item-label">Aria2 Version: </div>
-                <div class="system-info-item-value"><span class="version">{{ aria2Ver }}</span>
-                </div>
-            </div>
-            <div class="system-info-item">
-                <div class="system-info-item-label">Yt-dlp Version: </div>
-                <div class="system-info-item-value"><span class="version">{{ ytdVer }}</span>
-                    <actionButton action="check" btnType="ytd" @clicked="checkUpdate" enableLoading="true"
-                        className="check-button">
-                        {{
-        ytdBtn
-                        }}</actionButton>
-                </div>
-            </div>
-        </div>
+  <div class="system-info-wrapper section">
+    <h3 class="section-title">System Info</h3>
+    <div class="system-info">
+      <div class="system-info-item">
+        <span class="system-info-label">Aria2 Version:</span>
+        <span class="system-info-value">{{ aria2Ver }}</span>
+      </div>
+      <div class="system-info-item">
+        <span class="system-info-label">Yt-dlp Version:</span>
+        <span class="system-info-value">{{ ytdVer }}</span>
+        <actionButton action="check" btnType="ytd" @clicked="checkUpdate" enableLoading="true"
+          className="check-button">
+          {{ ytdBtn }}
+        </actionButton>
+      </div>
     </div>
+  </div>
 </template>
 <script>
 import helper from "../utils/helper";
 import actionButton from "./actionButton";
+
 const ARIA2_CHECK_URL = "/apps/ncdownloader/aria2/release/check";
 const ARIA2_UPDATE_URL = "/apps/ncdownloader/aria2/release/update";
 const YTD_CHECK_URL = "/apps/ncdownloader/ytdl/release/check";
 const YTD_UPDATE_URL = "/apps/ncdownloader/ytdl/release/update";
 
 export default {
-    name: "systemInfo",
-    data() {
-        return {
-            aria2Btn: "Check for Update",
-            ytdBtn: "Check for Update",
-        };
-    },
-    components: {
-        actionButton
-    },
-    computed: {
-        aria2Ver: {
-            get() {
-                return this.$props.aria2Version
-            },
-            set(value) {
-                this.$props.aria2Version = value
-                //this.$emit("update:aria2Version", value)
+  name: "systemInfo",
+  data() {
+    return {
+      aria2Btn: "Check for Update",
+      ytdBtn: "Check for Update",
+    };
+  },
+  components: { actionButton },
+  methods: {
+    checkUpdate(event, $vm) {
+      const { btnType, action } = $vm.$props;
+      const path = action === "check"
+        ? (btnType === "aria2" ? ARIA2_CHECK_URL : YTD_CHECK_URL)
+        : (btnType === "aria2" ? ARIA2_UPDATE_URL : YTD_UPDATE_URL);
+      helper
+        .httpClient(helper.generateUrl(path))
+        .setMethod("GET")
+        .setHandler((data) => {
+          $vm.loading = false;
+          if (data.status) {
+            helper.info(data.message);
+            if (action == "check") {
+              if (btnType == "ytd") this.ytdBtn = "Update";
+              else this.aria2Btn = "Update";
+              $vm.$props.action = "update";
+            } else {
+              if (btnType == "ytd") this.ytdBtn = "Check for Update";
+              else this.aria2Btn = "Check for Update";
+              $vm.$props.action = "check";
+              if (data.data) {
+                if (btnType == "ytd") this.ytdVer = data.data;
+                else if (btnType == "aria2") this.aria2Ver = data.data;
+              }
             }
-        },
-        ytdVer: {
-            get() {
-                return this.$props.ytdVersion
-            },
-            set(value) {
-                this.$props.ytdVersion = value
-                //this.$emit("update:ytdVersion", value)
-            }
-        }
+          } else {
+            helper.info(data.message);
+          }
+        })
+        .send();
     },
-    methods: {
-        checkUpdate(event, $vm) {
-            const { btnType, action } = $vm.$props;
-            const path = action === "check" ? (btnType === "aria2" ? ARIA2_CHECK_URL : YTD_CHECK_URL) : (btnType === "aria2" ? ARIA2_UPDATE_URL : YTD_UPDATE_URL);
-            helper
-                .httpClient(helper.generateUrl(path))
-                .setMethod("GET")
-                .setHandler((data) => {
-                    $vm.loading = false;
-                    if (data.status) {
-                        helper.info(data.message)
-                        //update button text
-                        if (action == "check") {
-                            if (btnType == "ytd") {
-                                this.ytdBtn = "Update"
-                            } else {
-                                this.aria2Btn = "Update"
-                            }
-                            $vm.$props.action = "update"
-                        } else {
-                            if (btnType == "ytd") {
-                                this.ytdBtn = "Check for Update"
-                            } else {
-                                this.aria2Btn = "Check for Update"
-                            }
-                            $vm.$props.action = "check"
-                            if (data.data) {
-                                if (btnType == "ytd") {
-                                    this.ytdVer = data.data
-                                } else if (btnType == "aria2") {
-                                    this.aria2Ver = data.data
-                                }
-                            }
-                        }
-                    } else {
-                        helper.info(data.message)
-                    }
-                })
-                .send();
-        },
-
-    },
-    props: {
-        aria2Version: {
-            type: String,
-            default: ""
-        },
-        ytdVersion: {
-            type: String,
-            default: ""
-        },
-    },
-}
+  },
+  props: {
+    aria2Version: { type: String, default: "" },
+    ytdVersion: { type: String, default: "" },
+  },
+};
 </script>
 <style scoped lang="scss">
+.system-info-wrapper {
+  margin-top: 16px;
+
+  .section-title {
+    color: var(--color-main-text);
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+}
+
 .system-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  .system-info-item {
     display: flex;
-    flex-direction: column;
-    margin-top: 10px;
+    align-items: center;
+    gap: 10px;
+  }
 
+  .system-info-label {
+    font-weight: 600;
+    color: var(--color-main-text);
+    min-width: 120px;
+  }
 
-    .system-info-item {
-        display: flex;
-        flex-direction: row;
-        margin-bottom: 10px;
-    }
+  .system-info-value {
+    color: var(--color-text-maxcontrast);
+    font-family: monospace;
+  }
 
-    .system-info-item-label {
-        font-weight: bold;
-        margin-right: 10px;
-        display: flex;
-        align-items: flex-end;
-    }
-
-    .system-info-item-value {
-        font-weight: normal;
-
-        .check-button {
-            border-radius: 0.25em;
-        }
-    }
+  .check-button {
+    margin-left: 8px;
+  }
 }
 </style>

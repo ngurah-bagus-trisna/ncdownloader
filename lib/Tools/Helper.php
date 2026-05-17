@@ -17,7 +17,7 @@ require __DIR__ . "/../../vendor/autoload.php";
 
 class Helper
 {
-    public const DOWNLOADTYPE = ['ARIA2' => 1, 'YOUTUBE-DL' => 2, 'OTHERS' => 3];
+    public const DOWNLOADTYPE = ['ARIA2' => 1, 'YOUTUBE-DL' => 2, 'OTHERS' => 3, 'CLOUD' => 4];
     public const STATUS = ['ACTIVE' => 1, 'PAUSED' => 2, 'COMPLETE' => 3, 'WAITING' => 4, 'ERROR' => 5];
     const MAXFILELEN = 255;
 
@@ -114,6 +114,26 @@ class Helper
     {
         $regex = '%^(?:(?:https?)://)(?:[a-z0-9_]*\.)?(?:twitter|ytdl)\.com/%i';
         return (bool) preg_match($regex, $url);
+    }
+
+    public static function isGDriveUrl($url): bool
+    {
+        return (bool) preg_match('%^https?://(?:drive\.|docs\.)?(?:google\.com|usercontent\.google\.com)/%i', $url);
+    }
+
+    public static function isOneDriveUrl($url): bool
+    {
+        return (bool) preg_match('%^https?://(?:onedrive\.live\.com|1drv\.ms|.*sharepoint\.com)/%i', $url);
+    }
+
+    public static function isTeraboxUrl($url): bool
+    {
+        return (bool) preg_match('%^https?://(?:.*terabox\.com|.*teraboxapp\.com)/%i', $url);
+    }
+
+    public static function isCloudUrl($url): bool
+    {
+        return self::isGDriveUrl($url) || self::isOneDriveUrl($url) || self::isTeraboxUrl($url);
     }
 
     public static function cleanString($string)
@@ -411,7 +431,8 @@ class Helper
         if (self::getUID()) {
             \OC_Util::setupFS();
             //get the real path of the file in the filesystem
-            return \OC\Files\Filesystem::getLocalFile($path);
+            $view = \OC\Files\Filesystem::getView();
+            return $view ? $view->getLocalFile($path) : "";
         }
         return "";
     }

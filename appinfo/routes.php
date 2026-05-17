@@ -33,5 +33,8 @@ return [
         //binary updates
         ['name' => 'Main#ytdlCheck', 'url' => '/ytdl/release/check', 'verb' => 'GET'],
         ['name' => 'Main#ytdlUpdate', 'url' => '/ytdl/release/update', 'verb' => 'GET'],
+        //cloud downloader
+        ['name' => 'Cloud#Download', 'url' => '/cloud/new', 'verb' => 'POST'],
+        ['name' => 'Cloud#Status', 'url' => '/cloud/status', 'verb' => 'POST'],
     ],
 ];

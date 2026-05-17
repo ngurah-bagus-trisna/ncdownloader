@@ -93,3 +93,13 @@ export default {
   },
 };
 </script>
+<style scoped lang="scss">
+.ncdownloader-general-settings h3 {
+  color: var(--color-main-text);
+  font-size: 18px;
+  font-weight: 600;
+  margin: 16px 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+</style>

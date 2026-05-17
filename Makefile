@@ -50,6 +50,11 @@ composer=$(shell which composer 2> /dev/null)
 
 all: build
 
+# Run the full setup (install tools, deps, build)
+.PHONY: setup
+setup:
+	bash $(CURDIR)/setup.sh
+
 # Fetches the PHP and JS dependencies and compiles the JS. If no composer.json
 # is present, the composer step is skipped, if no package.json or js/package.json
 # is present, the npm step is skipped

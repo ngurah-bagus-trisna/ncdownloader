@@ -1,4 +1,5 @@
 import helper from '../utils/helper'
+
 interface Map {
     [key: string]: string | {} | Array<any>
 }
@@ -10,13 +11,10 @@ class contentTable {
     rowClass: string = "table-row";
     headingClass: string = "table-heading";
     cellClass: string = "table-cell";
-    //this is the parent element the table is going to append to
     tableContainer: string = 'ncdownloader-table-wrapper';
-    numRow: number;
     table: HTMLElement;
     rows: rowData
     heading: Array<string>
-    actionButtons: Array<{}>
 
     constructor(heading: Array<string>, rows: rowData) {
         this.table = document.getElementById(this.tableContainer) as HTMLElement;
@@ -40,26 +38,24 @@ class contentTable {
         this.table.innerHTML = '';
     }
     loading() {
-        let htmlStr = '<div class="text-center"><div class="spinner-border" role="status"> <span class="visually-hidden">Loading...</span></div></div>'
-        this.table.innerHTML = htmlStr;
+        this.table.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;padding:20px;color:var(--color-text-maxcontrast)"><div class="spinner"></div><span style="margin-left:8px">Loading...</span></div>';
         return this;
     }
     noData() {
         this.clear();
         let div = document.createElement('div');
-        div.classList.add("no-items");
+        div.style.cssText = 'padding:20px;text-align:center;color:var(--color-text-maxcontrast)';
         div.appendChild(document.createTextNode(helper.t('No items')));
         this.table.appendChild(div);
     }
-    createHeading(prefix = "table-heading"): HTMLElement {
+    createHeading(): HTMLElement {
         let thead = document.createElement("section");
         thead.classList.add(this.headingClass);
         let headRow = document.createElement("header");
         headRow.classList.add(this.rowClass);
-        thead.classList.add(this.headingClass);
         this.heading.forEach(name => {
             let rowItem = document.createElement("div");
-            rowItem.classList.add(prefix + "-" + name.toLowerCase());
+            rowItem.classList.add("table-heading-" + name.toLowerCase());
             rowItem.classList.add(this.cellClass);
             let text = document.createTextNode(helper.t(helper.ucfirst(name)));
             rowItem.appendChild(text);
@@ -72,19 +68,14 @@ class contentTable {
         let tbody = document.createElement("section");
         tbody.classList.add(this.bodyClass);
         tbody.classList.add("table-body");
-        let row;
         for (const element of this.rows) {
-            if (element === null) {
-                continue;
-            }
-            row = document.createElement("div");
+            if (element === null) continue;
+            let row = document.createElement("div");
             row.classList.add(this.rowClass);
-            let text;
             for (let key in element) {
                 if (key.substring(0, 4) == 'data') {
-                    let name = key.replace("_", "-");
                     if (typeof element[key] == "string") {
-                        row.setAttribute(name, (<string>element[key]));
+                        row.setAttribute(key.replace("_", "-"), <string>element[key]);
                         row.setAttribute("id", key);
                     }
                     continue;
@@ -93,37 +84,30 @@ class contentTable {
                 rowItem.classList.add(this.cellClass);
                 if (key === 'actions' && Array.isArray(element[key])) {
                     let tmp = element[key] as Array<any>;
-                    rowItem.classList.add([this.cellClass, "action-item"].join("-"));
+                    rowItem.classList.add("table-cell-action-item");
                     let container = document.createElement("div");
                     container.classList.add("button-container");
                     tmp.forEach(value => {
-                        if (!value.name) {
-                            return;
-                        }
-                        let data = value.data || '';
-                        container.appendChild(this.createActionButton(value.name, value.path, data));
+                        if (!value.name) return;
+                        container.appendChild(this.createActionButton(value.name, value.path, value.data || ''));
                     })
                     rowItem.appendChild(container);
                     row.appendChild(rowItem);
                 } else if (Array.isArray(element[key])) {
                     let child = element[key] as any[];
-                    let div;
                     child.forEach(ele => {
-                        div = document.createElement('div');
+                        let div = document.createElement('div');
                         if (helper.isHtml(ele)) {
                             div.innerHTML = ele;
                         } else {
-                            text = document.createTextNode(ele);
-                            div.appendChild(text);
+                            div.appendChild(document.createTextNode(ele));
                         }
                         rowItem.appendChild(div);
                     })
                     rowItem.setAttribute("id", [this.cellClass, key].join("-"));
                     row.appendChild(rowItem);
-                    continue;
                 } else if (typeof element[key] === "string") {
-                    text = document.createTextNode(element[key] as string);
-                    rowItem.appendChild(text);
+                    rowItem.appendChild(document.createTextNode(element[key] as string));
                     rowItem.setAttribute("id", [this.cellClass, key].join("-"));
                     row.appendChild(rowItem);
                 }
@@ -131,7 +115,6 @@ class contentTable {
             tbody.appendChild(row);
         }
         return tbody;
-
     }
 
     createActionButton(name: string, path: string, data: string): HTMLElement {
@@ -146,17 +129,6 @@ class contentTable {
         button.setAttribute("title", helper.ucfirst(name));
         button.setAttribute("id", name + "-action-button");
         return button;
-    }
-
-    createActionCell(cell: HTMLElement) {
-        let div = document.createElement("div");
-        let button = document.createElement("button");
-        button.classList.add("icon-more", "action-button");
-        button.setAttribute("id", "action-links-button");
-        div.classList.add("action-item");
-        div.appendChild(button);
-        //div.appendChild(actionLinks);
-        cell.appendChild(div);
     }
 }
 

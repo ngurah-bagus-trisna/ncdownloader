@@ -50,7 +50,7 @@ class MainController extends Controller
         $this->dbconn = new DbHelper();
         $this->counters = new Counters($aria2, $this->dbconn, $UserId);
         $this->ytdl = $ytdl;
-        $this->isAdmin = \OC_User::isAdminUser($this->uid);
+        $this->isAdmin = $this->uid ? \OC::$server->get(\OCP\IGroupManager::class)->isAdmin($this->uid) : false;
         $this->hideError = Helper::getSettings("ncd_hide_errors", false);
         $this->disable_bt_nonadmin = Helper::getAdminSettings("ncd_disable_bt");
         $this->accessDenied = $this->l10n->t("Sorry,only admin users can download files via BT!");

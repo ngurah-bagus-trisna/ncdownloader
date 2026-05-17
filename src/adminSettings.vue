@@ -1,5 +1,6 @@
 <template>
-  <div class="section">
+  <div class="section admin-section">
+    <h3>Server Settings</h3>
     <settingsRow v-for="(option, key) in optionRows" v-bind:key="key" :value="option.value" :id="option.id"
       :label="option.label" :placeholder="option.placeholder" :path="option.path" />
   </div>
@@ -98,3 +99,13 @@ export default {
 
 };
 </script>
+<style scoped lang="scss">
+.admin-section h3, .section h3 {
+  color: var(--color-main-text);
+  font-size: 16px;
+  font-weight: 600;
+  margin: 16px 0 8px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+</style>
