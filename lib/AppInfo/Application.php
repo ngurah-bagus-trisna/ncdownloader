@@ -62,7 +62,7 @@ class Application extends App implements IBootstrap
             return new Ytdl($config);
         });
         $context->registerService(GDriveResolver::class, function (ContainerInterface $c) {
-            return new GDriveResolver($c->get(Crawler::class));
+            return new GDriveResolver();
         });
 
         $context->registerService(Settings::class, function (ContainerInterface $c) use ($uid) {

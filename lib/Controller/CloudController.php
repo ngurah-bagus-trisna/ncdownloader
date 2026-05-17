@@ -47,12 +47,13 @@ class CloudController extends Controller
 
         // Resolve GDrive URLs to get past the virus scan confirmation page
         $resolvedFilename = null;
-        $resolvedCookie = null;
         if (Helper::isGDriveUrl($url)) {
             $resolved = $this->resolver->resolve($url);
+            if (isset($resolved['error'])) {
+                return new JSONResponse(['error' => $resolved['error']]);
+            }
             $url = $resolved['url'];
             $resolvedFilename = $resolved['filename'];
-            $resolvedCookie = $resolved['cookie'];
         }
 
         $dlDir = $this->aria2->getDownloadDir();
@@ -60,28 +61,18 @@ class CloudController extends Controller
             return new JSONResponse(['error' => sprintf('%s is not writable', $dlDir)]);
         }
 
-        $resp = $this->_download($url, $resolvedFilename, $resolvedCookie);
+        $resp = $this->_download($url, $resolvedFilename);
         return new JSONResponse($resp);
     }
 
-    private function _download(string $url, ?string $resolvedFilename = null, ?string $cookie = null): array
+    private function _download(string $url, ?string $resolvedFilename = null): array
     {
-        // Pass the GDrive session cookie to aria2c so confirm tokens are valid
-        if ($cookie) {
-            $this->aria2->setOption('header', ['Cookie: ' . $cookie]);
-        }
-
         $filename = $resolvedFilename ?: Helper::getFilename($url);
         if ($filename && $filename !== 'unknown' && $filename !== 'download') {
             $this->aria2->setFileName($filename);
         }
 
         $result = $this->aria2->download($url);
-
-        // Clean up: remove the cookie header so it doesn't leak to future downloads
-        if ($cookie) {
-            $this->aria2->setOption('header', null);
-        }
 
         if (!$result) {
             return ['error' => 'Failed to start download'];
