@@ -74,6 +74,15 @@ def resolve(url_or_id: str) -> dict:
 
     body = b''.join(body_chunks).decode('utf-8', errors='replace')
 
+    # ── Extract filename from confirmation page ──────────
+    filename = None
+    soup = bs4.BeautifulSoup(body, 'html.parser')
+    name_span = soup.find('span', class_='uc-name-size')
+    if name_span:
+        name_link = name_span.find('a')
+        if name_link:
+            filename = name_link.text.strip()
+
     # ── Try to extract the download URL (gdown's get_url_from_gdrive_confirmation) ─
     resolved_url = _extract_download_url(body)
 
@@ -95,7 +104,9 @@ def resolve(url_or_id: str) -> dict:
             return {'error': 'File requires login or different permissions.'}
         return {'error': 'Failed to resolve download URL — Google returned a page instead of a file.'}
 
-    filename = _extract_filename(resp2)
+    # Confirmation page filename is most reliable; fall back to Content-Disposition
+    if not filename:
+        filename = _extract_filename(resp2)
 
     return {
         'url': resp2.url,
@@ -152,20 +163,21 @@ def _extract_filename(resp: requests.Response) -> str | None:
     """Extract filename from response Content-Disposition header."""
     cd = resp.headers.get('content-disposition', '')
     if cd:
-        # Try filename*=UTF-8''name first, then filename="name"
+        # filename*=UTF-8''encoded-name (RFC 5987, preferred)
         m = re.search(r"filename\*=(?:UTF-8''|utf-8'')([^;\s]+)", cd, re.I)
         if m:
             return urllib.parse.unquote(m.group(1))
-        m = re.search(r'filename="?([^";\s]+)"?', cd)
-        if m:
-            return m.group(1).strip('"')
 
-    # Try to get from final URL path
-    path = urllib.parse.urlparse(resp.url).path
-    if path and '/' in path:
-        name = path.rsplit('/', 1)[-1]
-        if name and len(name) > 3 and '.' in name:
-            return urllib.parse.unquote(name)
+        # filename="quoted name with spaces"
+        m = re.search(r'filename="([^"]+)"', cd, re.I)
+        if m:
+            return m.group(1)
+
+        # filename=unquoted (rare)
+        m = re.search(r'filename=([^;\n]+)', cd, re.I)
+        if m:
+            name = m.group(1).strip().strip('"')
+            return name
 
     return None
 
