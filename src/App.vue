@@ -31,6 +31,10 @@ const successCallback = (data, element) => {
   }
 };
 
+const isCloudUrl = (url) => {
+  return /drive\.google\.com|usercontent\.google\.com|docs\.google\.com|onedrive\.live\.com|1drv\.ms|sharepoint\.com|terabox\.com|dropbox\.com/i.test(url);
+};
+
 export default {
   name: "mainApp",
   inject: ["settings"],
@@ -72,12 +76,12 @@ export default {
         message = helper.t("Download task started!");
         helper.pollingYtdl();
         helper.setContentTableType("ytdl-downloads");
-      } else if (formData.type === "cloud") {
-        // Cloud downloads use aria2c — appear in Active Downloads with full progress
-        message = helper.t("Download task started!");
-        helper.setContentTableType("active-downloads");
-        helper.polling();
       } else {
+        // Auto-detect cloud/GDrive URLs and route to cloud downloader
+        const url = formData["text-input-value"] || inputValue;
+        if (isCloudUrl(url)) {
+          formWrapper.setAttribute("action", this.uris.cloud_url);
+        }
         helper.polling();
         helper.setContentTableType("active-downloads");
       }

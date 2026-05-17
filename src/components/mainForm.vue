@@ -22,13 +22,6 @@
       >
         {{ searchLabel }}
       </button>
-      <button
-        type="button"
-        :class="['type-btn', { active: downloadType === 'cloud' }]"
-        @click="whichType('cloud', $event)"
-      >
-        Cloud
-      </button>
     </div>
 
     <div class="action-group">
@@ -100,9 +93,6 @@ export default {
       } else if (type === "ytdl") {
         this.placeholder = t("ncdownloader", "Paste your video link here");
         this.path = this.uris.ytd_url;
-      } else if (type === "cloud") {
-        this.placeholder = t("ncdownloader", "Paste cloud drive share link (GDrive, OneDrive, etc.)");
-        this.path = this.uris.cloud_url;
       } else {
         this.path = this.uris.search_url;
       }
